@@ -1,0 +1,8 @@
+﻿services:
+  jirabot:
+    image: jirabot
+    container_name: jira-telegram-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure

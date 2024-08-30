@@ -1,0 +1,21 @@
+# This is a generated file. Not intended for manual editing.
+services:
+  jirabot:
+    build:
+      context: "/Users/vradaev/RiderProjects/CTHelpDesk"
+      dockerfile: "Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/JIRAbot.dll"
+    environment:
+      DOTNET_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "jirabot:dev"
+    ports: []
+    volumes:
+    - "/Users/vradaev/.nuget/packages:/home/app/.nuget/packages"
+    - "/Users/vradaev/RiderProjects/CTHelpDesk:/app:rw"
+    - "/Users/vradaev/RiderProjects/CTHelpDesk:/src:rw"
+    working_dir: "/app"

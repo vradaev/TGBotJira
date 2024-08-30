@@ -1,0 +1,22 @@
+{
+  "Jira": {
+    "Url": "https://ct-ms.atlassian.net",
+    "Email": "vr@cartrek.online",
+    "ApiToken": "xjrn5fvNtAYJtUubyici7D2B",
+    "ProjectKey": "HELPTEST"
+  },
+  "Telegram": {
+    "BotToken": "5739035923:AAGwRNTshEi8_zWgz7c-mqg2StmCw4kAbDo",
+    "BotUsername":"HelpCTMSBot",
+    "Chats": [
+      {
+        "ChatId": -982085411,
+        "ClientName": "HELLOBEST"
+      },
+      {
+        "ChatId": 9876543210,
+        "ClientName": "ClientName2"
+      }
+      ]
+  }
+}
