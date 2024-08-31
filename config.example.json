@@ -1,0 +1,22 @@
+{
+  "Jira": {
+    "Url": "your_jira_url",
+    "Email": "your_jira_login",
+    "ApiToken": "your_jira_api_key",
+    "ProjectKey": "your_project_key"
+  },
+  "Telegram": {
+    "BotToken": "your_telegram_bot_token",
+    "BotUsername":"your_bot_name",
+    "Chats": [
+      {
+        "ChatId": your_id_chat_1,
+        "ClientName": "ClientName1"
+      },
+      {
+        "ChatId": your_id_chat_2,
+        "ClientName": "ClientName2"
+      }
+    ]
+  }
+}
