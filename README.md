@@ -7,6 +7,7 @@ My Project is a tool that helps you helpesk team improve communication with the 
 - [Description](#description)
 - [Installation](#installation)
 - [Contacts](#contacts)
+- [ChangeLog](#changelog)
 
 ## Description
 
@@ -29,4 +30,6 @@ My Project is help to recived the client message in the telegram and open ticket
 If you have any questions, you can contact me on the TG: @vadimradaev
 
 
+## ChangeLog
 
+Все значимые изменения и обновления можно найти в [CHANGELOG.md](CHANGELOG.md).
