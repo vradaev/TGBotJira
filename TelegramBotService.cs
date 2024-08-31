@@ -13,8 +13,7 @@ public class TelegramBotService
     private readonly Config _config;
     
     private readonly Dictionary<long, string> _messageToIssueMap = new Dictionary<long, string>();
-
-    // Username of the bot (e.g., "my_bot")
+    
     private readonly string _botUsername;
 
     private const int PollingInterval = 1000; // 1 second
@@ -24,7 +23,7 @@ public class TelegramBotService
         _botClient = new TelegramBotClient(botToken);
         _jiraClient = jiraClient;
         _botUsername = botUsername;
-        _config = config ?? throw new ArgumentNullException(nameof(config)); // Инициализация поля конфигурации
+        _config = config ?? throw new ArgumentNullException(nameof(config));
 
     }
 
@@ -61,6 +60,7 @@ public class TelegramBotService
         var message = update.Message;
         
         var (chatConfig, channel) = GetChatConfigAndChannel(message.Chat.Id);
+        
         
         if (chatConfig == null)
         {
@@ -180,13 +180,21 @@ public class TelegramBotService
     }
     private async Task HandleReplyMessage(Message message)
     {
-        if (_messageToIssueMap.TryGetValue(message.ReplyToMessage.MessageId, out var issueKey))
+        string issueKey = null;
+        Message currentMessage = message;
+
+        // Ищем задачу Jira, к которой привязано сообщение
+        if (_messageToIssueMap.TryGetValue(message.ReplyToMessage.MessageId, out issueKey))
         {
             var commentText = message.Text ?? "No text provided";
 
             try
             {
                 await _jiraClient.AddCommentToIssueAsync(issueKey, commentText);
+
+                // Сохраняем идентификатор нового комментария и связываем его с задачей
+                _messageToIssueMap[message.MessageId] = issueKey;
+
                 await _botClient.SendTextMessageAsync(message.Chat.Id, $"Comment added to issue {issueKey}.");
                 Logger.Info("Added comment to Jira issue {0} from chat {1}", issueKey, message.Chat.Id);
             }
@@ -198,7 +206,6 @@ public class TelegramBotService
         }
         else
         {
-            //await _botClient.SendTextMessageAsync(message.Chat.Id, "No corresponding Jira issue found for the reply.");
             Logger.Info("No corresponding Jira issue found for the reply from chat {0}", message.Chat.Id);
         }
     }
