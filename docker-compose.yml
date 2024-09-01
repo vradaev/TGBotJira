@@ -20,5 +20,8 @@
     restart: on-failure
     depends_on:
       - postgres
+    volumes:
+      - jira_data:/path/in/container
 volumes:
   postgres_data:
+  jira_data:
