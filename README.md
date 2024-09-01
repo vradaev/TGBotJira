@@ -41,7 +41,7 @@ My Project is help to recived the client message in the telegram and open ticket
     ```
 7. Check logs 
     ```bash
-    docker logs -f jira-telegram-bot
+    docker compose logs -f jira-telegram-bot
     ```
 
 ## Contacts
