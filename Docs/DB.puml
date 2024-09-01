@@ -1,0 +1,68 @@
+@startuml
+
+
+entity Groups {
+    * id: INT
+    --
+    * client_id: INT
+    * name: VARCHAR
+    * group_id: VARCHAR
+}
+
+entity Clients {
+    * id: INT
+    --
+    * name: VARCHAR
+}
+
+entity RequestTypes {
+    * id: INT
+    --
+    * name: VARCHAR
+}
+
+entity Requests {
+    * id: INT
+    --
+    * group_id: INT
+    * message_id: INT
+    * type_id: INT
+    * created_at: DATETIME
+    * summary: TEXT
+    description: TEXT
+}
+
+entity JiraTasks {
+    * id: INT
+    --
+    * request_id: INT
+    * jira_key: VARCHAR
+    * created_at: DATETIME
+    * changed_at: DATETIME
+    * status: VARCHAR
+}
+
+entity RequestStatusHistory {
+    * id: INT
+    --
+    * request_id: INT
+    * old_status: VARCHAR
+    * new_status: VARCHAR
+    * changed_at: DATETIME
+}
+entity Comments {
+    * id: INT
+    --
+    * request_id: INT
+    * message_id: VARCHAR
+    * comment_text: TEXT
+    * created_at: DATETIME
+}
+Groups ||--o{ Requests : "submits"
+Clients ||--o{ Groups : "has"
+RequestTypes ||--o{ Requests : "categorized as"
+Requests ||--o| JiraTasks : "creates"
+Requests ||--o{ RequestStatusHistory : "has"
+Requests ||--o{ Comments : "has"
+
+@enduml

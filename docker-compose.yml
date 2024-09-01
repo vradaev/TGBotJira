@@ -1,4 +1,16 @@
 ﻿services:
+  postgres:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: TelegramJiraDB
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      
   jirabot:
     image: jirabot
     container_name: jira-telegram-bot
@@ -6,3 +18,7 @@
       context: .
       dockerfile: Dockerfile
     restart: on-failure
+    depends_on:
+      - postgres
+volumes:
+  postgres_data:

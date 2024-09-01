@@ -4,6 +4,12 @@ using NLog;
 
 namespace JIRAbot;
 
+public class ConnectionStrings
+{
+    public string DefaultConnection { get; set; } =
+        "Host=localhost;Database=TelegramJiraDB;Username=postgres;Password=mysecretpassword";
+}
+
 public class JiraConfig
 {
     public string Url { get; set; } = "https://your-jira-instance.atlassian.net";
@@ -32,6 +38,7 @@ public class Config
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
+    public ConnectionStrings ConnectionStrings { get; private set; }
     public JiraConfig Jira { get; private set; }
     public TelegramConfig Telegram { get; private set; }
 
@@ -50,7 +57,9 @@ public class Config
 
             var configJson = File.ReadAllText(configFilePath);
             var config = JObject.Parse(configJson);
-
+            
+            ConnectionStrings = config["ConnectionStrings"]?.ToObject<ConnectionStrings>() ??
+                                throw new InvalidOperationException("ConnectionStrings configuration section is missing or invalid.");
             Jira = config["Jira"]?.ToObject<JiraConfig>() ??
                    throw new InvalidOperationException("Jira configuration section is missing or invalid.");
             Telegram = config["Telegram"]?.ToObject<TelegramConfig>() ??
@@ -69,6 +78,7 @@ public class Config
     {
         var defaultConfig = new
         {
+            ConnectionStrings = new ConnectionStrings(),
             Jira = new JiraConfig(),
             Telegram = new TelegramConfig()
         };
