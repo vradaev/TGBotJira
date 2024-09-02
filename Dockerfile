@@ -18,4 +18,7 @@ RUN dotnet publish "JIRAbot.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+COPY NLog.config .
+
 ENTRYPOINT ["dotnet", "JIRAbot.dll"]
