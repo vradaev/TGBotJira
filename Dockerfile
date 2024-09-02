@@ -19,6 +19,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-COPY NLog.config .
-
 ENTRYPOINT ["dotnet", "JIRAbot.dll"]
