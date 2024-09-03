@@ -125,13 +125,20 @@ public class TelegramBotService
 
     private async Task HandleMediaMessage(Message message)
     {
-      Logger.Info("Received media message from chat {0}", message.Chat.Id);
+         Logger.Info("Received media message from chat {0}", message.Chat.Id);
 
     // Получаем конфигурацию чата и имя канала
     var (chatConfig, channel) = GetChatConfigAndChannel(message.Chat.Id);
     if (chatConfig == null)
     {
         Logger.Info("Ignoring media message from chat {0} as it is not configured.", message.Chat.Id);
+        return;
+    }
+
+    // Проверяем, содержит ли сообщение упоминание бота
+    if (message.Caption == null || !message.Caption.Contains($"@{_botUsername}", StringComparison.OrdinalIgnoreCase))
+    {
+        Logger.Info("Ignoring media message from chat {0} as it does not mention the bot.", message.Chat.Id);
         return;
     }
 
@@ -246,6 +253,7 @@ public class TelegramBotService
         await _botClient.SendTextMessageAsync(message.Chat.Id, "\ud83d\udeab An error occurred while processing your media message.");
     }
     }
+
     private async Task HandleReplyMessage(Message message)
     {
         string issueKey = null;
