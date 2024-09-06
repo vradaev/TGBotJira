@@ -37,7 +37,7 @@ class Program
             
             var chatConfigService = new ChatConfigService(context);
             
-            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService);
+            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService, config);
             
             var botTask = telegramBotService.StartAsync(cancellationToken);
 

@@ -36,6 +36,8 @@ public class Config
     public ConnectionStrings ConnectionStrings { get; private set; }
     public JiraConfig Jira { get; private set; }
     public TelegramConfig Telegram { get; private set; }
+    
+    public List<long> AdminUsers { get; private set; }
 
     public Config(string configFilePath)
     {
@@ -59,6 +61,9 @@ public class Config
                    throw new InvalidOperationException("Jira configuration section is missing or invalid.");
             Telegram = config["Telegram"]?.ToObject<TelegramConfig>() ??
                        throw new InvalidOperationException("Telegram configuration section is missing or invalid.");
+            AdminUsers = config["AdminUsers"]?.ToObject<List<long>>() ??
+                         throw new InvalidOperationException("AllowedUsers configuration section is missing or invalid.");
+
 
             Logger.Info("Configuration loaded successfully.");
         }
@@ -75,7 +80,8 @@ public class Config
         {
             ConnectionStrings = new ConnectionStrings(),
             Jira = new JiraConfig(),
-            Telegram = new TelegramConfig()
+            Telegram = new TelegramConfig(),
+            AdminUsers = new List<long>()
         };
 
         var json = JsonConvert.SerializeObject(defaultConfig, Formatting.Indented);

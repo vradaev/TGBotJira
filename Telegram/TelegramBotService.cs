@@ -14,6 +14,7 @@ public class TelegramBotService
     private readonly IChatConfigService _chatConfigService;
     private readonly MediaHandlerService _mediaHandlerService;
     private readonly AppDbContext _context;
+    private readonly Config _config;
     
     private readonly Dictionary<long, string> _messageToIssueMap = new Dictionary<long, string>();
     
@@ -21,7 +22,7 @@ public class TelegramBotService
 
     private const int PollingInterval = 1000; // 1 second
 
-    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, MediaHandlerService mediaHandlerService, AppDbContext context, IChatConfigService chatConfigService)
+    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, MediaHandlerService mediaHandlerService, AppDbContext context, IChatConfigService chatConfigService, Config config)
     {
         _botClient = new TelegramBotClient(botToken);
         _jiraClient = jiraClient;
@@ -29,6 +30,7 @@ public class TelegramBotService
         _mediaHandlerService = mediaHandlerService ?? throw new ArgumentNullException(nameof(mediaHandlerService));
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _chatConfigService = chatConfigService ?? throw new ArgumentNullException(nameof(chatConfigService));
+        _config = config ?? throw new ArgumentNullException(nameof(config));
 
     }
 
@@ -258,7 +260,7 @@ private async Task HandleAddClientCommand(Message message)
     {
         await _botClient.SendTextMessageAsync(
             chatId: message.Chat.Id,
-            text: "Usage: /addclient client_name",
+            text: "\u26a0\ufe0f Usage command: /addclient client_name",
             parseMode: ParseMode.Html
         );
         return;
@@ -268,38 +270,34 @@ private async Task HandleAddClientCommand(Message message)
 
     try
     {
-        // Проверка, связана ли эта группа уже с каким-либо клиентом
         var existingGroup = await _context.Groups
             .FirstOrDefaultAsync(g => g.GroupId == message.Chat.Id.ToString());
 
         if (existingGroup != null)
         {
-            // Группа уже связана с клиентом, ошибка
             var associatedClient = await _context.Clients
                 .FirstOrDefaultAsync(c => c.Id == existingGroup.ClientId);
 
             await _botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
-                text: $"This chat is already associated with client '{associatedClient?.Name}'.",
+                text: $"\ud83e\udeaa This chat is already associated with client '{associatedClient?.Name}'.",
                 parseMode: ParseMode.Html
             );
 
             Logger.Info($"Chat '{existingGroup.Name}' is already associated with client '{associatedClient?.Name}'.");
             return;
         }
-
-        // Проверка, существует ли уже клиент с таким именем
+        
         var existingClient = await _context.Clients
             .FirstOrDefaultAsync(c => c.Name == clientName);
 
         if (existingClient != null)
         {
-            // Клиент существует, создаем новую группу для этого клиента
             var newGroup = new Group
             {
                 GroupId = message.Chat.Id.ToString(),
                 Name = (await _botClient.GetChatAsync(message.Chat.Id)).Title,
-                ClientId = existingClient.Id, // Привязка группы к клиенту
+                ClientId = existingClient.Id, 
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -308,7 +306,7 @@ private async Task HandleAddClientCommand(Message message)
 
             await _botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
-                text: $"Client '{clientName}' exists. Chat '{newGroup.Name}' has been successfully added to this client.",
+                text: $"\u2755 Client '{clientName}' exists. Chat '{newGroup.Name}' has been successfully added to this client.",
                 parseMode: ParseMode.Html
             );
 
@@ -316,7 +314,6 @@ private async Task HandleAddClientCommand(Message message)
         }
         else
         {
-            // Если клиент не существует, создаем нового клиента и группу
             var channel = await _botClient.GetChatAsync(message.Chat.Id);
             var newClient = new Client
             {
@@ -331,7 +328,7 @@ private async Task HandleAddClientCommand(Message message)
             {
                 GroupId = message.Chat.Id.ToString(),
                 Name = channel.Title,
-                ClientId = newClient.Id, // Привязка группы к новому клиенту
+                ClientId = newClient.Id, 
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -340,7 +337,7 @@ private async Task HandleAddClientCommand(Message message)
 
             await _botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
-                text: $"Client '{clientName}' and chat '{channel.Title}' have been successfully added.",
+                text: $"\ud83e\udee1 Client '{clientName}' and chat '{channel.Title}' have been successfully added.",
                 parseMode: ParseMode.Html
             );
 
@@ -359,6 +356,16 @@ private async Task HandleAddClientCommand(Message message)
 }
 private async Task<bool> ProcessCommandAsync(Message message)
 {
+    if (!_config.AdminUsers.Contains((int)message.From.Id))
+    {
+        await _botClient.SendTextMessageAsync(
+            chatId: message.Chat.Id,
+            text: "\ud83d\uded1 You are not authorized to use this command.",
+            parseMode: ParseMode.Html
+        );
+        Logger.Info($"You '{message.From.Id}' are not authorized to use this command in the channel {message.Chat.Id}.");
+        return false;
+    }
     if (message.Text.StartsWith("/addclient"))
     {
         await HandleAddClientCommand(message);
