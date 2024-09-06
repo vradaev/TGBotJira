@@ -7,18 +7,21 @@ entity Groups {
     * client_id: INT
     * name: VARCHAR
     * group_id: VARCHAR
+    * created_at: DATETIME
 }
 
 entity Clients {
     * id: INT
     --
     * name: VARCHAR
+    * created_at: DATETIME
 }
 
 entity RequestTypes {
     * id: INT
     --
     * name: VARCHAR
+    * created_at: DATETIME
 }
 
 entity Requests {

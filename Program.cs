@@ -1,6 +1,7 @@
 ﻿using JIRAbot;
 using Microsoft.EntityFrameworkCore;
 using NLog;
+using Telegram.Bot;
 
 class Program
 {
@@ -17,23 +18,31 @@ class Program
             
             var config = new Config("config.json");
             
+            var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+                .UseNpgsql(config.ConnectionStrings.DefaultConnection)
+                .Options;
+            
             using (var context = new AppDbContext(config.ConnectionStrings.DefaultConnection))
             {
                 // Автоматическое создание базы данных и таблиц, если их нет
                 context.Database.Migrate();
                 Logger.Info("Database migration applied successfully.");
-            }
+           
             
             var jiraClient = new JiraClient(config.Jira.Url, config.Jira.Email, config.Jira.ApiToken, config.Jira.ProjectKey);
             
-            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, config);
+            var botClient = new TelegramBotClient(config.Telegram.BotToken);
+            
+            var mediaHandlerService = new MediaHandlerService(botClient, jiraClient);
+            
+            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, config, mediaHandlerService, context);
             
             var botTask = telegramBotService.StartAsync(cancellationToken);
 
             Logger.Info("Bot is running... Press any key to exit.");
 
             await botTask; 
-
+            }
             Logger.Info("Application stopped");
         }
         catch (Exception ex)
