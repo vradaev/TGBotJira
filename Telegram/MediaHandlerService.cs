@@ -17,11 +17,10 @@ public class MediaHandlerService
         _jiraClient = jiraClient;
     }
 
-    public async Task HandleMediaMessageAsync(Message message, string botUsername, Dictionary<long, string> messageToIssueMap, Func<long, (ChatConfig chatConfig, string channel)> getChatConfigAndChannel)
+    public async Task HandleMediaMessageAsync(Message message, string botUsername, Dictionary<long, string> messageToIssueMap, ChatConfig chatConfig)
     {
         Logger.Info("Received media message from chat {0}", message.Chat.Id);
-
-        var (chatConfig, channel) = getChatConfigAndChannel(message.Chat.Id);
+        
         if (chatConfig == null)
         {
             Logger.Info("Ignoring media message from chat {0} as it is not configured.", message.Chat.Id);
@@ -86,7 +85,7 @@ public class MediaHandlerService
                 else
                 {
                     string summary = cleanedText.Length > 250 ? cleanedText.Substring(0, 250) : cleanedText;
-                    string newIssueKey = await _jiraClient.CreateIssueAsync(summary, cleanedText, channel);
+                    string newIssueKey = await _jiraClient.CreateIssueAsync(summary, cleanedText, chatConfig.ClientName);
 
                     if (!string.IsNullOrEmpty(newIssueKey))
                     {

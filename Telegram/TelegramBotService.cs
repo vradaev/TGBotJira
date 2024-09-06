@@ -11,7 +11,7 @@ public class TelegramBotService
     private readonly TelegramBotClient _botClient;
     private readonly JiraClient _jiraClient;
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    private readonly Config _config;
+    private readonly IChatConfigService _chatConfigService;
     private readonly MediaHandlerService _mediaHandlerService;
     private readonly AppDbContext _context;
     
@@ -21,14 +21,14 @@ public class TelegramBotService
 
     private const int PollingInterval = 1000; // 1 second
 
-    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, Config config, MediaHandlerService mediaHandlerService, AppDbContext context)
+    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, MediaHandlerService mediaHandlerService, AppDbContext context, IChatConfigService chatConfigService)
     {
         _botClient = new TelegramBotClient(botToken);
         _jiraClient = jiraClient;
         _botUsername = botUsername;
-        _config = config ?? throw new ArgumentNullException(nameof(config));
         _mediaHandlerService = mediaHandlerService ?? throw new ArgumentNullException(nameof(mediaHandlerService));
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _chatConfigService = chatConfigService ?? throw new ArgumentNullException(nameof(chatConfigService));
 
     }
 
@@ -61,82 +61,92 @@ public class TelegramBotService
 
     private async Task HandleUpdateAsync(Update update)
     {
-        if (update.Message == null) return;
+
         var message = update.Message;
         
-        if (message.Text.StartsWith("/addclient"))
+        if (message == null)
         {
-            await HandleAddClientCommand(message);
+            Logger.Debug("Update does not contain a message.");
             return;
         }
         
-        var (chatConfig, channel) = GetChatConfigAndChannel(message.Chat.Id);
-        
-        
-        if (chatConfig == null)
+        if (message.Text != null)
         {
-            Logger.Info("Ignoring message from chat {0} as it is not configured.", message.Chat.Id);
-            return;
-        }
-        
-        // Check if the message contains a mention of the bot
-        if (message.Text != null && message.Text.Contains($"@{_botUsername}", StringComparison.OrdinalIgnoreCase))
-        {
-            Logger.Info("Received mention of the bot from chat {0}", message.Chat.Id);
-
-            string cleanedText = message.Text.Replace($"@{_botUsername}", "", StringComparison.OrdinalIgnoreCase).Trim();
-            if (string.IsNullOrEmpty(cleanedText))
+            var (chatConfig, channel) = await GetChatConfigAndChannelAsync(message.Chat.Id);
+            if (chatConfig == null)
             {
-                await _botClient.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    text: "\u2757 Please provide a description of the issue after mentioning the bot.",
-                    parseMode: ParseMode.Html
-                );
+                Logger.Info("Ignoring message from chat {0} as it is not configured.", message.Chat.Id);
+                return;
             }
-            else
+            
+            if (await ProcessCommandAsync(message))
+            {
+                return;
+            }
+
+            if (message.Text.Contains($"@{_botUsername}", StringComparison.OrdinalIgnoreCase))
             {
                 Logger.Info("Received mention of the bot from chat {0}", message.Chat.Id);
-                string summary = SanitizeSummary(cleanedText);
-                string description = cleanedText;
-                
-                try
-                {
-                    string issueKey = await _jiraClient.CreateIssueAsync(summary, description, channel);
 
-                    if (!string.IsNullOrEmpty(issueKey))
-                    {
-                        await _botClient.SendTextMessageAsync(message.Chat.Id, $"\ud83c\udd95 Issue created: <a href=\"https://ct-ms.atlassian.net/browse/{issueKey}\">{issueKey}</a>", parseMode: ParseMode.Html);
-                        _messageToIssueMap[message.MessageId] = issueKey;
-                        Logger.Info("Issue created in Jira: {0}", issueKey);
-                    }
-                    else
-                    {
-                        await _botClient.SendTextMessageAsync(message.Chat.Id, "\ud83d\udeab Failed to create issue.");
-                        Logger.Error("Failed to create Jira issue from chat {0}", message.Chat.Id);
-                        
-                    }
-                }
-                catch (Exception ex)
+                string cleanedText = message.Text.Replace($"@{_botUsername}", "", StringComparison.OrdinalIgnoreCase)
+                    .Trim();
+                if (string.IsNullOrEmpty(cleanedText))
                 {
-                    Logger.Error(ex, "Error while creating Jira issue.");
-                    await _botClient.SendTextMessageAsync(message.Chat.Id, "\ud83d\udeab Error while creating issue.");
+                    await _botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: "\u2757 Please provide a description of the issue after mentioning the bot.",
+                        parseMode: ParseMode.Html
+                    );
                 }
-                
+                else
+                {
+                    Logger.Info("Received mention of the bot from chat {0}", message.Chat.Id);
+                    string summary = SanitizeSummary(cleanedText);
+                    string description = cleanedText;
+
+                    try
+                    {
+                        string issueKey = await _jiraClient.CreateIssueAsync(summary, description, channel);
+
+                        if (!string.IsNullOrEmpty(issueKey))
+                        {
+                            await _botClient.SendTextMessageAsync(message.Chat.Id,
+                                $"\ud83c\udd95 Issue created: <a href=\"https://ct-ms.atlassian.net/browse/{issueKey}\">{issueKey}</a>",
+                                parseMode: ParseMode.Html);
+                            _messageToIssueMap[message.MessageId] = issueKey;
+                            Logger.Info("Issue created in Jira: {0}", issueKey);
+                        }
+                        else
+                        {
+                            await _botClient.SendTextMessageAsync(message.Chat.Id,
+                                "\ud83d\udeab Failed to create issue.");
+                            Logger.Error("Failed to create Jira issue from chat {0}", message.Chat.Id);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Error while creating Jira issue.");
+                        await _botClient.SendTextMessageAsync(message.Chat.Id,
+                            "\ud83d\udeab Error while creating issue.");
+                    }
+                }
+            }
+            else if (message.ReplyToMessage != null)
+            {
+                await HandleReplyMessage(message);
             }
         }
         else if (message.Photo != null || message.Document != null)
         {
+            // Сообщение содержит медиа
             await HandleMediaMessage(message);
-        }
-        else if (message.ReplyToMessage != null)
-        {
-            await HandleReplyMessage(message);
         }
     }
 
     private async Task HandleMediaMessage(Message message)
     {
-        await _mediaHandlerService.HandleMediaMessageAsync(message, _botUsername, _messageToIssueMap, GetChatConfigAndChannel);
+        var (chatConfig, channel) = await _chatConfigService.GetChatConfigAndChannelAsync(message.Chat.Id);
+        await _mediaHandlerService.HandleMediaMessageAsync(message, _botUsername, _messageToIssueMap, chatConfig);
     }
 
     private async Task HandleReplyMessage(Message message)
@@ -188,11 +198,25 @@ public class TelegramBotService
 
         return sanitized;
     }
-    private (ChatConfig chatConfig, string channel) GetChatConfigAndChannel(long chatId)
+    private async Task<(ChatConfig chatConfig, string channel)> GetChatConfigAndChannelAsync(long chatId)
     {
-        var chatConfig = _config.Telegram.Chats.FirstOrDefault(c => c.ChatId == chatId);
-        var channel = chatConfig?.ClientName;
-        return (chatConfig, channel);
+        var group = await _context.Groups
+            .Include(g => g.Client)
+            .FirstOrDefaultAsync(g => g.GroupId == chatId.ToString());
+
+        if (group != null)
+        {
+            var chatConfig = new ChatConfig
+            {
+                ChatId = chatId,
+                ClientName = group.Client?.Name
+            };
+
+            var channel = group.Client?.Name;
+            return (chatConfig, channel);
+        }
+
+        return (null, null);
     }
 
     private async Task AttachFilesToIssueAsync(Message message, string issueKey)
@@ -332,5 +356,16 @@ private async Task HandleAddClientCommand(Message message)
             parseMode: ParseMode.Html
         );
     }
+}
+private async Task<bool> ProcessCommandAsync(Message message)
+{
+    if (message.Text.StartsWith("/addclient"))
+    {
+        await HandleAddClientCommand(message);
+        return true;
+    }
+    // Add more command handling logic here if needed
+
+    return false;
 }
 }

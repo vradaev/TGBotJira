@@ -22,12 +22,7 @@ public class TelegramConfig
 {
     public string BotToken { get; set; } = "your-telegram-bot-token";
     public string BotUsername { get; set; } = "your_bot_username";
-    public List<ChatConfig> Chats { get; set; } = new List<ChatConfig>
-    {
-        new ChatConfig { ChatId = 1234567890, ClientName = "DefaultClient" }
-    };
 }
-
 public class ChatConfig
 {
     public long ChatId { get; set; }
