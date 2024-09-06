@@ -252,7 +252,7 @@ private async Task HandleAddClientCommand(Message message)
         {
             // Группа уже связана с клиентом, ошибка
             var associatedClient = await _context.Clients
-                .FirstOrDefaultAsync(c => c.Id == existingGroup.СlientId);
+                .FirstOrDefaultAsync(c => c.Id == existingGroup.ClientId);
 
             await _botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
@@ -271,11 +271,11 @@ private async Task HandleAddClientCommand(Message message)
         if (existingClient != null)
         {
             // Клиент существует, создаем новую группу для этого клиента
-            var newGroup = new Groups
+            var newGroup = new Group
             {
                 GroupId = message.Chat.Id.ToString(),
                 Name = (await _botClient.GetChatAsync(message.Chat.Id)).Title,
-                СlientId = existingClient.Id, // Привязка группы к клиенту
+                ClientId = existingClient.Id, // Привязка группы к клиенту
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -294,7 +294,7 @@ private async Task HandleAddClientCommand(Message message)
         {
             // Если клиент не существует, создаем нового клиента и группу
             var channel = await _botClient.GetChatAsync(message.Chat.Id);
-            var newClient = new Clients
+            var newClient = new Client
             {
                 Name = clientName,
                 CreatedAt = DateTime.UtcNow
@@ -303,11 +303,11 @@ private async Task HandleAddClientCommand(Message message)
             _context.Clients.Add(newClient);
             await _context.SaveChangesAsync();
 
-            var newGroup = new Groups
+            var newGroup = new Group
             {
                 GroupId = message.Chat.Id.ToString(),
                 Name = channel.Title,
-                СlientId = newClient.Id, // Привязка группы к новому клиенту
+                ClientId = newClient.Id, // Привязка группы к новому клиенту
                 CreatedAt = DateTime.UtcNow
             };
 
