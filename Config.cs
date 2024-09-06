@@ -16,6 +16,8 @@ public class JiraConfig
     public string Email { get; set; } = "your-email@example.com";
     public string ApiToken { get; set; } = "your-api-token";
     public string ProjectKey { get; set; } = "PROJECT_KEY";
+    
+    public string CustomField { get; set; } = "labels";
 }
 
 public class TelegramConfig

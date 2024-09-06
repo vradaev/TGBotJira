@@ -29,7 +29,7 @@ class Program
                 Logger.Info("Database migration applied successfully.");
             
 
-            var jiraClient = new JiraClient(config.Jira.Url, config.Jira.Email, config.Jira.ApiToken, config.Jira.ProjectKey);
+            var jiraClient = new JiraClient(config.Jira.Url, config.Jira.Email, config.Jira.ApiToken, config.Jira.ProjectKey, config.Jira.CustomField);
             
             var botClient = new TelegramBotClient(config.Telegram.BotToken);
             

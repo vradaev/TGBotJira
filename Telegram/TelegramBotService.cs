@@ -74,6 +74,11 @@ public class TelegramBotService
         
         if (message.Text != null)
         {
+            if (await ProcessCommandAsync(message))
+            {
+                return;
+            }
+            
             var (chatConfig, channel) = await GetChatConfigAndChannelAsync(message.Chat.Id);
             if (chatConfig == null)
             {
@@ -81,11 +86,6 @@ public class TelegramBotService
                 return;
             }
             
-            if (await ProcessCommandAsync(message))
-            {
-                return;
-            }
-
             if (message.Text.Contains($"@{_botUsername}", StringComparison.OrdinalIgnoreCase))
             {
                 Logger.Info("Received mention of the bot from chat {0}", message.Chat.Id);

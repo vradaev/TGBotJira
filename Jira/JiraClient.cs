@@ -5,18 +5,20 @@ namespace JIRAbot;
 
 public class JiraClient
 {
- private readonly string _jiraUrl;
+        private readonly string _jiraUrl;
         private readonly string _email;
         private readonly string _apiToken;
         private readonly string _projectKey;
+        private readonly string _customField;
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        public JiraClient(string jiraUrl, string email, string apiToken, string projectKey)
+        public JiraClient(string jiraUrl, string email, string apiToken, string projectKey, string customField)
         {
             _jiraUrl = jiraUrl;
             _email = email;
             _apiToken = apiToken;
             _projectKey = projectKey;
+            _customField = customField;
         }
 
         public async Task<string> CreateIssueAsync(string summary, string description, string channel)
@@ -28,18 +30,23 @@ public class JiraClient
                 var client = new RestClient(_jiraUrl);
                 var request = new RestRequest("rest/api/2/issue", Method.Post);
                 request.AddHeader("Content-Type", "application/json");
-                request.AddJsonBody(new
-                {
-                    fields = new
-                    {
-                        project = new { key = _projectKey },
-                        summary,
-                        description,
-                        issuetype = new { name = "Task" },
-                        labels =  new[] { channel}
-                    }
-                });
                 request.AddHeader("Authorization", $"Basic {Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{_email}:{_apiToken}"))}");
+                
+                var fields = new Dictionary<string, object>
+                {
+                    { "project", new { key = _projectKey } },
+                    { "summary", summary },
+                    { "description", description },
+                    { "issuetype", new { name = "Task" } },
+                    { _customField, new { value = channel } } 
+                };
+                var issueBody = new
+                {
+                    fields
+                };
+
+                request.AddJsonBody(issueBody);
+
 
                 var response = await client.ExecuteAsync(request);
 
