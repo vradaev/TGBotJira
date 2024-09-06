@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.1.0] - 2024-09-06
+
+### Features
+- Add save Clients, Groups to database
+- Add admin command to add new customer 
+- Change source of clients chats from config to database logic
+- Add admin users to config
+### Technical
+- Refactoring database structure
+- Improvments to source code
 
 ## [2.0.0] - 2024-09-01
 
