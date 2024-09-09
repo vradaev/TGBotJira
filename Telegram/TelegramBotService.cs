@@ -356,18 +356,21 @@ private async Task HandleAddClientCommand(Message message)
 }
 private async Task<bool> ProcessCommandAsync(Message message)
 {
-    if (!_config.AdminUsers.Contains((int)message.From.Id))
-    {
-        await _botClient.SendTextMessageAsync(
-            chatId: message.Chat.Id,
-            text: "\ud83d\uded1 You are not authorized to use this command.",
-            parseMode: ParseMode.Html
-        );
-        Logger.Info($"You '{message.From.Id}' are not authorized to use this command in the channel {message.Chat.Id}.");
-        return false;
-    }
     if (message.Text.StartsWith("/addclient"))
     {
+        // Проверка, является ли пользователь администратором
+        if (!_config.AdminUsers.Contains((int)message.From.Id))
+        {
+            await _botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "\ud83d\uded1 You are not authorized to use this command.",
+                parseMode: ParseMode.Html
+            );
+            Logger.Info($"User '{message.From.Id}' is not authorized to use the /addclient command in the channel {message.Chat.Id}.");
+            return false;
+        }
+
+        // Обработка команды /addclient
         await HandleAddClientCommand(message);
         return true;
     }
