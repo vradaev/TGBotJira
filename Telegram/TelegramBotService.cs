@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using Telegram.Bot;
@@ -15,6 +16,7 @@ public class TelegramBotService
     private readonly MediaHandlerService _mediaHandlerService;
     private readonly AppDbContext _context;
     private readonly Config _config;
+    private readonly HttpClient _httpClient = new HttpClient();
     
     private readonly Dictionary<long, string> _messageToIssueMap = new Dictionary<long, string>();
     
@@ -172,8 +174,11 @@ public class TelegramBotService
                 // Сохраняем идентификатор нового комментария и связываем его с задачей
                 _messageToIssueMap[message.MessageId] = issueKey;
 
-                await _botClient.SendTextMessageAsync(message.Chat.Id, $"\ud83d\udcdd Comment added: <a href=\"https://ct-ms.atlassian.net/browse/{issueKey}\">{issueKey}</a>", parseMode: ParseMode.Html);
+               // await _botClient.SendTextMessageAsync(message.Chat.Id, $"\ud83d\udcdd Comment added: <a href=\"https://ct-ms.atlassian.net/browse/{issueKey}\">{issueKey}</a>", parseMode: ParseMode.Html);
                 Logger.Info("Added comment to Jira issue {0} from chat {1}", issueKey, message.Chat.Id);
+                
+                await AddReactionAsync(message.Chat.Id, message.MessageId, "\u270d");
+                
             }
             catch (Exception ex)
             {
@@ -377,5 +382,33 @@ private async Task<bool> ProcessCommandAsync(Message message)
     // Add more command handling logic here if needed
 
     return false;
+}
+private async Task AddReactionAsync(long chatId, int messageId, string emoji, bool isBig = true)
+{
+    var botToken = _config.Telegram.BotToken;
+    var url = $"https://api.telegram.org/bot{botToken}/setMessageReaction";
+
+    var payload = new
+    {
+        chat_id = chatId,
+        message_id = messageId,
+        reaction = new[]
+        {
+            new { type = "emoji", emoji = emoji }
+        },
+        is_big = isBig
+    };
+
+    var response = await _httpClient.PostAsJsonAsync(url, payload);
+
+    if (response.IsSuccessStatusCode)
+    {
+        Logger.Info("Reaction added successfully.");
+    }
+    else
+    {
+        var errorMessage = await response.Content.ReadAsStringAsync();
+        Logger.Error($"Failed to add reaction. Response: {errorMessage}");
+    }
 }
 }
