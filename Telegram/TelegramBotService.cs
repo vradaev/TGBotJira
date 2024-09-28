@@ -114,10 +114,11 @@ public class TelegramBotService
 
                         if (!string.IsNullOrEmpty(issueKey))
                         {
-                            await _botClient.SendTextMessageAsync(message.Chat.Id,
+                            var sentMessage = await _botClient.SendTextMessageAsync(message.Chat.Id,
                                 $"\ud83c\udd95 Issue created: <a href=\"https://ct-ms.atlassian.net/browse/{issueKey}\">{issueKey}</a>",
                                 parseMode: ParseMode.Html);
                             _messageToIssueMap[message.MessageId] = issueKey;
+                            _messageToIssueMap[sentMessage.MessageId] = issueKey;
                             Logger.Info("Issue created in Jira: {0}", issueKey);
                         }
                         else
