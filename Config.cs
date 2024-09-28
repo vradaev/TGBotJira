@@ -24,6 +24,8 @@ public class TelegramConfig
 {
     public string BotToken { get; set; } = "your-telegram-bot-token";
     public string BotUsername { get; set; } = "your_bot_username";
+    
+    public string ChannelAlarm { get; set; } = "idChannel";
 }
 public class ChatConfig
 {

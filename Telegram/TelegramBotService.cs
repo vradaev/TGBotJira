@@ -1,9 +1,11 @@
 using System.Net.Http.Json;
+using JIRAbot.Alarm;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace JIRAbot;
 
@@ -17,14 +19,18 @@ public class TelegramBotService
     private readonly AppDbContext _context;
     private readonly Config _config;
     private readonly HttpClient _httpClient = new HttpClient();
+    private readonly EscalationService _escalationService;
     
     private readonly Dictionary<long, string> _messageToIssueMap = new Dictionary<long, string>();
     
     private readonly string _botUsername;
 
     private const int PollingInterval = 1000; // 1 second
+    
+    private long _sosChatId;
+    private int _sosMessageId;
 
-    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, MediaHandlerService mediaHandlerService, AppDbContext context, IChatConfigService chatConfigService, Config config)
+    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, MediaHandlerService mediaHandlerService, AppDbContext context, IChatConfigService chatConfigService, Config config, string channelId)
     {
         _botClient = new TelegramBotClient(botToken);
         _jiraClient = jiraClient;
@@ -33,6 +39,7 @@ public class TelegramBotService
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _chatConfigService = chatConfigService ?? throw new ArgumentNullException(nameof(chatConfigService));
         _config = config ?? throw new ArgumentNullException(nameof(config));
+        _escalationService = new EscalationService(_botClient, channelId);
 
     }
 
@@ -65,6 +72,10 @@ public class TelegramBotService
 
     private async Task HandleUpdateAsync(Update update)
     {
+        if (update.CallbackQuery != null)
+        {
+            await HandleCallbackQueryAsync(update.CallbackQuery);
+        }
 
         var message = update.Message;
         
@@ -380,6 +391,27 @@ private async Task<bool> ProcessCommandAsync(Message message)
         await HandleAddClientCommand(message);
         return true;
     }
+    if (message.Text.StartsWith("/sos"))
+    {
+        _sosChatId = message.Chat.Id;
+        _sosMessageId = message.MessageId;
+        
+        var channelName = message.Chat.Title ?? "Неизвестный канал"; // Название канала, откуда пришло сообщение
+
+        var inlineKeyboard = new InlineKeyboardMarkup(new[]
+        {
+            // Кнопка для принятия тревоги, с уникальным callback
+            new []
+            {
+                InlineKeyboardButton.WithCallbackData("Принять тревогу", $"accept_alert|{channelName}")
+            }
+        });
+
+        // Отправляем сообщение с названием канала и кнопкой
+        await _escalationService.SendAlertAsync($"🚨 Тревога из канала: {channelName}! Получен сигнал SOS!", inlineKeyboard, message.Chat.Id, _sosMessageId, channelName);
+    
+        return true;
+    }
     // Add more command handling logic here if needed
 
     return false;
@@ -410,6 +442,36 @@ private async Task AddReactionAsync(long chatId, int messageId, string emoji, bo
     {
         var errorMessage = await response.Content.ReadAsStringAsync();
         Logger.Error($"Failed to add reaction. Response: {errorMessage}");
+    }
+}
+
+private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
+{
+    if (callbackQuery.Data.StartsWith("accept_alert"))
+    {
+        var dataParts = callbackQuery.Data.Split('|');
+        var channelName = dataParts.Length > 1 ? dataParts[1] : "Неизвестный канал";
+        
+        var userName = $"@{callbackQuery.From.Username}";
+        
+
+
+        // Логика для принятия тревоги
+        await _botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Тревога принята");
+        
+        await _escalationService.HandleAcceptSos(_sosChatId, _sosMessageId, callbackQuery.Message.MessageId, callbackQuery.Message.Chat.Id, userName, channelName);
+        
+        // Дополнительно можно обновить сообщение, что тревога принята
+      //  await _botClient.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId,
+      //      $"✅ Тревога принята пользователем {userName} для клиента: {channelName}");
+        
+        // Отправляем ответное сообщение в тот же чат, где была вызвана команда SOS
+    //    await _botClient.SendTextMessageAsync(
+      //      chatId: _sosChatId, // Используем сохраненный идентификатор чата
+      //      text: $"🔍 Пользователь {userName} проверяет тревогу.",
+     //       replyToMessageId: _sosMessageId // Делаем reply на сообщение с командой /sos
+   //     );
+        
     }
 }
 }

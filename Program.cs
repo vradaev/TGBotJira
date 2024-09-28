@@ -1,4 +1,5 @@
-﻿using JIRAbot;
+﻿using System.Threading.Channels;
+using JIRAbot;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using Telegram.Bot;
@@ -17,6 +18,7 @@ class Program
             Logger.Info("Application started");
             
             var config = new Config("config.json");
+            var channelId = config.Telegram.ChannelAlarm;
             
             var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
                 .UseNpgsql(config.ConnectionStrings.DefaultConnection)
@@ -37,7 +39,7 @@ class Program
             
             var chatConfigService = new ChatConfigService(context);
             
-            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService, config);
+            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService, config, channelId);
             
             var botTask = telegramBotService.StartAsync(cancellationToken);
 
