@@ -1,5 +1,6 @@
 ﻿using System.Threading.Channels;
 using JIRAbot;
+using JIRAbot.Alarm;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using Telegram.Bot;
@@ -38,8 +39,8 @@ class Program
             var mediaHandlerService = new MediaHandlerService(botClient, jiraClient);
             
             var chatConfigService = new ChatConfigService(context);
-            
-            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService, config, channelId);
+            var notificationService = new NotificationService();
+            var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService, config, channelId, notificationService);
             
             var botTask = telegramBotService.StartAsync(cancellationToken);
 

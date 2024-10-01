@@ -30,7 +30,7 @@ public class TelegramBotService
     private long _sosChatId;
     private int _sosMessageId;
 
-    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, MediaHandlerService mediaHandlerService, AppDbContext context, IChatConfigService chatConfigService, Config config, string channelId)
+    public TelegramBotService(string botToken, JiraClient jiraClient, string botUsername, MediaHandlerService mediaHandlerService, AppDbContext context, IChatConfigService chatConfigService, Config config, string channelId, NotificationService notificationService)
     {
         _botClient = new TelegramBotClient(botToken);
         _jiraClient = jiraClient;
@@ -39,7 +39,7 @@ public class TelegramBotService
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _chatConfigService = chatConfigService ?? throw new ArgumentNullException(nameof(chatConfigService));
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _escalationService = new EscalationService(_botClient, channelId);
+        _escalationService = new EscalationService(_botClient, channelId, notificationService);
 
     }
 
@@ -398,6 +398,8 @@ private async Task<bool> ProcessCommandAsync(Message message)
         
         var channelName = message.Chat.Title ?? "Неизвестный канал"; 
         var alertId = Guid.NewGuid().ToString();
+        
+        Logger.Info("Generate new alert id: {0}", alertId);
 
         var inlineKeyboard = new InlineKeyboardMarkup(new[]
         {
