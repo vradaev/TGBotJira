@@ -19,6 +19,7 @@ namespace JIRAbot
         public DbSet<JiraTask> JiraTasks { get; set; }
         public DbSet<RequestStatusHistory> RequestStatusHistories { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<DutyOfficer> DutyOfficers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -62,6 +63,14 @@ namespace JIRAbot
                 .WithMany(r => r.Comments)
                 .HasForeignKey(c => c.RequestId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DutyOfficer>(entity =>
+            {
+                entity.ToTable("DutyOfficers");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(15);
+                entity.Property(e => e.DutyType).IsRequired();
+            });
         }
     }
 }

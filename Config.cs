@@ -32,6 +32,16 @@ public class ChatConfig
     public long ChatId { get; set; }
     public string ClientName { get; set; }
 }
+public class NotificationConfig
+{
+    public SmscConfig Smsc { get; set; } = new SmscConfig();
+}
+public class SmscConfig
+{
+    public string Login { get; set; } = "your-smsc-login";
+    public string ApiKey { get; set; } = "your-smsc-api-key";
+    public string Sender { get; set; } = "your-smsc-sender";
+}
 
 public class Config
 {
@@ -42,6 +52,8 @@ public class Config
     public TelegramConfig Telegram { get; private set; }
     
     public List<long> AdminUsers { get; private set; }
+    
+    public NotificationConfig Notification { get; private set; }
 
     public Config(string configFilePath)
     {
@@ -67,7 +79,8 @@ public class Config
                        throw new InvalidOperationException("Telegram configuration section is missing or invalid.");
             AdminUsers = config["AdminUsers"]?.ToObject<List<long>>() ??
                          throw new InvalidOperationException("AllowedUsers configuration section is missing or invalid.");
-
+            Notification = config["Notification"]?.ToObject<NotificationConfig>() ??
+                           throw new InvalidOperationException("Telegram configuration section is missing or invalid.");
 
             Logger.Info("Configuration loaded successfully.");
         }
@@ -85,7 +98,8 @@ public class Config
             ConnectionStrings = new ConnectionStrings(),
             Jira = new JiraConfig(),
             Telegram = new TelegramConfig(),
-            AdminUsers = new List<long>()
+            AdminUsers = new List<long>(),
+            Notification = new NotificationConfig()
         };
 
         var json = JsonConvert.SerializeObject(defaultConfig, Formatting.Indented);

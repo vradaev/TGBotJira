@@ -74,4 +74,12 @@ namespace JIRAbot
         public string CommentText { get; set; }
         public DateTime CreatedAt { get; set; }
     }
+    
+    public class DutyOfficer
+    {
+        public int Id { get; set; }
+        public string PhoneNumber { get; set; }
+        public string DutyType { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
 }

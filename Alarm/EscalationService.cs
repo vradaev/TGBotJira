@@ -44,10 +44,10 @@ public class EscalationService
             
             Logger.Info("Add to Dictionary. message: {0} chatid {1} alertid {2}", sosMessageId, originalChatId, alertId);
             
-            _ = StartTimerForSmsAsync(sosRequest, cancellationTokenSource.Token);
+            _ = StartTimerForSmsAsync(sosRequest, cancellationTokenSource.Token, message);
             Logger.Info("StartTimerForSms. message: {0} chatid {1} alertid {2}", sosMessageId, originalChatId, alertId);
             
-            _ = StartTimerForCallAsync(sosRequest, cancellationTokenSource.Token);
+            _ = StartTimerForCallAsync(sosRequest, cancellationTokenSource.Token, message);
             Logger.Info("StartTimerForCall. message: {0} chatid {1} alertid {2}", sosMessageId, originalChatId, alertId);
      
         }
@@ -83,15 +83,15 @@ public class EscalationService
                 Logger.Error("No active SOS request found for this chat and message ID" );
             }
         }
-        private async Task StartTimerForSmsAsync(SosRequest sosRequest, CancellationToken cancellationToken)
+        private async Task StartTimerForSmsAsync(SosRequest sosRequest, CancellationToken cancellationToken, string message)
         {
             try
             {
-                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+                await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
                 
                 if (!sosRequest.IsAccepted)
                 {
-                    _notificationService.SendSms(sosRequest.AlertId);
+                    await _notificationService.SendSmsAsync(sosRequest.AlertId, message);
                     Logger.Info("SMS sent. AlertId: {0}", sosRequest.AlertId);
                 }
             }
@@ -102,17 +102,17 @@ public class EscalationService
             }
         }
         
-        private async Task StartTimerForCallAsync(SosRequest sosRequest, CancellationToken cancellationToken)
+        private async Task StartTimerForCallAsync(SosRequest sosRequest, CancellationToken cancellationToken, string message)
         {
             try
             {
 
-                await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
+                await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken);
 
                 // Если тревога не принята, совершаем звонок
                 if (!sosRequest.IsAccepted)
                 {
-                    _notificationService.MakeCall(sosRequest.AlertId);
+                    _notificationService.MakeCallAsync(sosRequest.AlertId, message);
                     Logger.Info("Called. AlertId: {0}", sosRequest.AlertId);
                 }
             }

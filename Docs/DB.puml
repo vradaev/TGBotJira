@@ -2,65 +2,75 @@
 
 
 entity Groups {
-    * id: INT
+    * Id: INT
     --
-    * client_id: INT
-    * name: VARCHAR
-    * group_id: VARCHAR
-    * created_at: DATETIME
+    * ClientId: INT
+    * Name: VARCHAR
+    * GroupId: VARCHAR
+    * CreatedAt: DATETIME
 }
 
 entity Clients {
-    * id: INT
+    * Id: INT
     --
-    * name: VARCHAR
-    * created_at: DATETIME
+    * Name: VARCHAR
+    * CreatedAt: DATETIME
 }
 
 entity RequestTypes {
-    * id: INT
+    * Id: INT
     --
-    * name: VARCHAR
-    * created_at: DATETIME
+    * Name: VARCHAR
+    * CreatedAt: DATETIME
 }
 
 entity Requests {
-    * id: INT
+    * Id: INT
     --
-    * group_id: INT
-    * message_id: INT
-    * type_id: INT
-    * created_at: DATETIME
-    * summary: TEXT
-    description: TEXT
-}
-
-entity JiraTasks {
-    * id: INT
-    --
-    * request_id: INT
-    * jira_key: VARCHAR
-    * created_at: DATETIME
-    * changed_at: DATETIME
+    * GroupId: INT
+    * MessageId: INT
+    * TypeId: INT
+    * CreatedAt: DATETIME
+    * Summary: TEXT
+    Description: TEXT
     * status: VARCHAR
 }
 
-entity RequestStatusHistory {
-    * id: INT
+entity JiraTasks {
+    * Id: INT
     --
-    * request_id: INT
-    * old_status: VARCHAR
-    * new_status: VARCHAR
-    * changed_at: DATETIME
+    * RequestId: INT
+    * JiraKey: VARCHAR
+    * CreatedAt: DATETIME
+    * ChangedAt: DATETIME
+    * Status: VARCHAR
+}
+
+entity RequestStatusHistory {
+    * Id: INT
+    --
+    * RequestId: INT
+    * OldStatus: VARCHAR
+    * NewStatus: VARCHAR
+    * ChangedAt: DATETIME
 }
 entity Comments {
-    * id: INT
+    * Id: INT
     --
-    * request_id: INT
-    * message_id: VARCHAR
-    * comment_text: TEXT
-    * created_at: DATETIME
+    * RequestId: INT
+    * MessageId: VARCHAR
+    * CommentText: TEXT
+    * CreatedAt: DATETIME
 }
+entity DutyOfficer {
+    * Id: INT
+    --
+    * PhoneNumber: VARCHAR
+    * DutyType: VARCHAR
+    * CreatedAt: DATETIME
+}
+
+
 Groups ||--o{ Requests : "submits"
 Clients ||--o{ Groups : "has"
 RequestTypes ||--o{ Requests : "categorized as"

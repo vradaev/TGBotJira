@@ -1,22 +1,25 @@
 {
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database=TelegramJiraDB;Username=postgres;Password=mysecretpassword"
+  },
   "Jira": {
-    "Url": "your_jira_url",
-    "Email": "your_jira_login",
-    "ApiToken": "your_jira_api_key",
-    "ProjectKey": "your_project_key"
+    "Url": "https://your-jira-instance.atlassian.net",
+    "Email": "your-email@example.com",
+    "ApiToken": "your-api-token",
+    "ProjectKey": "PROJECT_KEY",
+    "CustomField": "labels"
   },
   "Telegram": {
-    "BotToken": "your_telegram_bot_token",
-    "BotUsername":"your_bot_name",
-    "Chats": [
-      {
-        "ChatId": your_id_chat_1,
-        "ClientName": "ClientName1"
-      },
-      {
-        "ChatId": your_id_chat_2,
-        "ClientName": "ClientName2"
-      }
-    ]
+    "BotToken": "your-telegram-bot-token",
+    "BotUsername": "your_bot_username",
+    "ChannelAlarm": "idChannel"
+  },
+  "AdminUsers": [],
+  "Notification": {
+    "Smsc": {
+      "Login": "your-smsc-login",
+      "ApiKey": "your-smsc-api-key",
+      "Sender": "your-smsc-sender"
+    }
   }
 }
