@@ -107,7 +107,7 @@ public class EscalationService
             try
             {
 
-                await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken);
+                await Task.Delay(TimeSpan.FromMinutes(7), cancellationToken);
 
                 // Если тревога не принята, совершаем звонок
                 if (!sosRequest.IsAccepted)

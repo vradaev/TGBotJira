@@ -397,7 +397,7 @@ private async Task<bool> ProcessCommandAsync(Message message)
         _sosMessageId = message.MessageId;
         
         var channelName = message.Chat.Title ?? "Неизвестный канал"; 
-        var alertId = Guid.NewGuid().ToString();
+        var alertId = UniqueIdGenerator.GenerateUniqueId();
         
         Logger.Info("Generate new alert id: {0}", alertId);
 
@@ -464,4 +464,20 @@ private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
         
     }
 }
+public class UniqueIdGenerator
+{
+    private static int currentId = 0;
+    private const int maxId = 9999;
+
+    public static string GenerateUniqueId()
+    {
+        if (currentId >= maxId)
+        {
+            throw new InvalidOperationException("Достигнуто максимальное количество уникальных идентификаторов.");
+        }
+        currentId++;
+        return currentId.ToString();;
+    }
+}
+
 }
