@@ -413,6 +413,12 @@ private async Task<bool> ProcessCommandAsync(Message message)
     
         return true;
     }
+    
+    if (message.Text.StartsWith("/cachereload"))
+    {
+        await ReloadCacheAsync(message);
+        return true;
+    }
 
     return false;
 }
@@ -464,6 +470,79 @@ private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
         
     }
 }
+
+private async Task ReloadCacheAsync(Message message) // Temporary workaround for hello
+{
+    try
+    {
+        var keyName = "cachereloadhello";
+        string? value = null;
+
+        try
+        {
+            // Попытка получить значение из базы данных
+            value = await _context.Settings
+                .Where(s => s.KeyName == keyName)
+                .Select(s => s.Value)
+                .FirstOrDefaultAsync();
+        }
+        catch (Exception dbEx)
+        {
+            Logger.Warn($"Error accessing database: {dbEx.Message}");
+        }
+
+        if (string.IsNullOrEmpty(value))
+        {
+            // Сообщаем, если значение в БД не найдено
+            await _botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "⚠️ URL for cache reload not found in settings.",
+                parseMode: ParseMode.Html
+            );
+            Logger.Warn("URL for cache reload not found in settings.");
+            return;
+        }
+
+        using var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, value);
+
+        try
+        {
+            // Выполняем запрос
+            var response = await client.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadAsStringAsync();
+            await _botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "\ud83e\udee1 Order cache reloaded successfully.",
+                parseMode: ParseMode.Html
+            );
+            Logger.Info($"Cache reloaded successfully: {result}");
+        }
+        catch (Exception httpEx)
+        {
+            // Обработка ошибок HTTP-запроса
+            await _botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: $"❌ Error reloading order cache: {httpEx.Message}",
+                parseMode: ParseMode.Html
+            );
+            Logger.Error($"Error reloading cache: {httpEx.Message}");
+        }
+    }
+    catch (Exception ex)
+    {
+        // Общая обработка ошибок
+        await _botClient.SendTextMessageAsync(
+            chatId: message.Chat.Id,
+            text: $"❌ Unexpected error: {ex.Message}",
+            parseMode: ParseMode.Html
+        );
+        Logger.Error($"Unexpected error: {ex.Message}");
+    }
+}
+
 public class UniqueIdGenerator
 {
     private static int currentId = 0;

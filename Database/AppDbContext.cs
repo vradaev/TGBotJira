@@ -20,6 +20,7 @@ namespace JIRAbot
         public DbSet<RequestStatusHistory> RequestStatusHistories { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<DutyOfficer> DutyOfficers { get; set; }
+        public DbSet<Setting> Settings { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -71,6 +72,48 @@ namespace JIRAbot
                 entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(15);
                 entity.Property(e => e.DutyType).IsRequired();
             });
+            modelBuilder.Entity<Setting>(entity =>
+            {
+                // Указание имени таблицы
+                entity.ToTable("Settings");
+
+                // Настройка ключа
+                entity.HasKey(s => s.Id);
+
+                // Настройка колонок
+                entity.Property(s => s.Id)
+                    .HasColumnName("id")
+                    .IsRequired()
+                    .ValueGeneratedOnAdd(); // Для автогенерации ID
+
+                entity.Property(s => s.KeyName)
+                    .HasColumnName("key_name")
+                    .IsRequired()
+                    .HasMaxLength(255); // Ограничение длины строки
+
+                entity.Property(s => s.Value)
+                    .HasColumnName("value")
+                    .IsRequired();
+
+                entity.Property(s => s.Description)
+                    .HasColumnName("description")
+                    .HasMaxLength(500); // Описание опционально
+
+                entity.Property(s => s.CreatedAt)
+                    .HasColumnName("created_at")
+                    .HasDefaultValueSql("NOW()") // Установка значения по умолчанию
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(s => s.UpdatedAt)
+                    .HasColumnName("updated_at")
+                    .HasDefaultValueSql("NOW()")
+                    .ValueGeneratedOnAddOrUpdate();
+
+                // Индекс для ускорения поиска по ключу
+                entity.HasIndex(s => s.KeyName)
+                    .IsUnique();
+            });
+            
         }
     }
 }

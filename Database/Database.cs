@@ -82,4 +82,13 @@ namespace JIRAbot
         public string DutyType { get; set; }
         public DateTime CreatedAt { get; set; }
     }
+    public class Setting
+    {
+        public int Id { get; set; }
+        public string KeyName { get; set; }
+        public string Value { get; set; }
+        public string Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
 }
