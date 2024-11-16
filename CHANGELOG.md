@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.4.0] - 2024-11-16
+
+### Features
+- Add method to reload cache
+- Add setting table to database
+
 ## [2.1.0] - 2024-09-06
 
 ### Features
