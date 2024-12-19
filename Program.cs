@@ -79,7 +79,7 @@ class Program
                 Logger.Error(ex, "Error during Jira ticket sync");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken); // Пауза между синхронизациями (например, 1 час)
+            await Task.Delay(TimeSpan.FromHours(1), cancellationToken); // Пауза между синхронизациями (например, 1 час)
         }
     }
 }
