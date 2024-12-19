@@ -21,6 +21,8 @@ namespace JIRAbot
         public DbSet<Comment> Comments { get; set; }
         public DbSet<DutyOfficer> DutyOfficers { get; set; }
         public DbSet<Setting> Settings { get; set; }
+        
+        public DbSet<JiraTicket> JiraTickets { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -113,7 +115,57 @@ namespace JIRAbot
                 entity.HasIndex(s => s.KeyName)
                     .IsUnique();
             });
-            
+            modelBuilder.Entity<JiraTicket>(entity =>
+            {
+                entity.ToTable("JiraTickets"); // Имя таблицы
+
+                entity.HasKey(t => t.Id); // Первичный ключ
+                entity.Property(t => t.Id)
+                    .HasColumnName("id")
+                    .IsRequired()
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(t => t.JiraKey)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(t => t.ClientName)
+                    .IsRequired(false)
+                    .HasMaxLength(100);
+
+                entity.Property(t => t.Assignee)
+                    .IsRequired(false)
+                    .HasMaxLength(100);
+
+                entity.Property(t => t.CategoryId)
+                    .IsRequired(false)
+                    .HasMaxLength(100);
+
+                entity.Property(t => t.Status)
+                    .IsRequired(false)
+                    .HasMaxLength(100);
+
+                entity.Property(t => t.Summary)
+                    .IsRequired(false)
+                    .HasMaxLength(1000);
+
+                entity.Property(t => t.Description)
+                    .IsRequired(false)
+                    .HasColumnType("text");
+
+                entity.Property(t => t.CreatedAt)
+                    .IsRequired();
+
+                entity.Property(t => t.FirstRespondAt)
+                    .IsRequired(false);
+
+                entity.Property(t => t.ClosedAt)
+                    .IsRequired(false);
+                
+                entity.Property(s => s.UpdatedAt)
+                    .HasDefaultValueSql("NOW()")
+                    .IsRequired();
+            });
         }
     }
 }

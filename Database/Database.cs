@@ -91,4 +91,21 @@ namespace JIRAbot
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
+    
+    public class JiraTicket
+    {
+        public int Id { get; set; }
+        public string JiraKey { get; set; }
+        public string ClientName { get; set; }
+        public string Assignee { get; set; }
+        public string CategoryId { get; set; }
+        public string Status { get; set; }
+        public string Summary { get; set; }
+        public string Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? FirstRespondAt { get; set; }
+        public DateTime? ClosedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+    
 }

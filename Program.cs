@@ -41,12 +41,16 @@ class Program
             var chatConfigService = new ChatConfigService(context);
             var notificationService = new NotificationService(config.Notification.Smsc, context);
             var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService, config, channelId, notificationService);
+            var jiraTicketService = new JiraTicketService(context, jiraClient);
+            var syncTask = StartJiraSyncPeriodically(jiraTicketService, cancellationToken);
+            
             
             var botTask = telegramBotService.StartAsync(cancellationToken);
 
             Logger.Info("Bot is running... Press any key to exit.");
 
-            await botTask; 
+            await Task.WhenAny(botTask, syncTask); 
+            
             }
             Logger.Info("Application stopped");
         }
@@ -57,6 +61,25 @@ class Program
         finally
         {
             LogManager.Shutdown(); 
+        }
+    }
+    
+    private static async Task StartJiraSyncPeriodically(JiraTicketService jiraTicketService, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                Logger.Info("Starting Jira ticket sync...");
+                await jiraTicketService.SaveJiraTicketsAsync(); // Синхронизируем тикеты
+                Logger.Info("Jira ticket sync completed.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during Jira ticket sync");
+            }
+
+            await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken); // Пауза между синхронизациями (например, 1 час)
         }
     }
 }
