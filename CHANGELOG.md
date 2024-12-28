@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [3.0.0] - 2024-12-28
+
+### Features
+- Add sync process of jira tickets to database
+- Add a command to send sms, call the employee on duty 
+
 ## [2.4.0] - 2024-11-16
 
 ### Features
