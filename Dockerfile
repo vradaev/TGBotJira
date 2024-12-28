@@ -1,5 +1,4 @@
 ﻿FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
-USER $APP_UID
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -18,5 +17,24 @@ RUN dotnet publish "JIRAbot.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Установка Chromium и необходимых библиотек
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxrandr2 \
+    libappindicator3-1 \
+    xdg-utils \
+    libgbm-dev \
+    --no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Определение пользователя, если требуется
+USER $APP_UID
 
 ENTRYPOINT ["dotnet", "JIRAbot.dll"]

@@ -43,6 +43,14 @@ public class SmscConfig
     public string Sender { get; set; } = "your-smsc-sender";
 }
 
+public class SuperSetConfig
+{
+    public string loginUrl { get; set; } = "loginurl";
+    public string Login { get; set; } = "login";
+    public string Password { get; set; } = "password";
+    public string DashboardUrl { get; set; } = "dashurl";
+}
+
 public class Config
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -54,6 +62,8 @@ public class Config
     public List<long> AdminUsers { get; private set; }
     
     public NotificationConfig Notification { get; private set; }
+    
+    public SuperSetConfig SuperSet { get; private set; }
 
     public Config(string configFilePath)
     {
@@ -81,6 +91,8 @@ public class Config
                          throw new InvalidOperationException("AllowedUsers configuration section is missing or invalid.");
             Notification = config["Notification"]?.ToObject<NotificationConfig>() ??
                            throw new InvalidOperationException("Telegram configuration section is missing or invalid.");
+            SuperSet = config["SuperSet"]?.ToObject<SuperSetConfig>() ??
+                       throw new InvalidOperationException("Telegram configuration section is missing or invalid.");
 
             Logger.Info("Configuration loaded successfully.");
         }
@@ -99,7 +111,8 @@ public class Config
             Jira = new JiraConfig(),
             Telegram = new TelegramConfig(),
             AdminUsers = new List<long>(),
-            Notification = new NotificationConfig()
+            Notification = new NotificationConfig(),
+            SuperSet = new SuperSetConfig()
         };
 
         var json = JsonConvert.SerializeObject(defaultConfig, Formatting.Indented);

@@ -2,7 +2,7 @@
 services:
   jirabot:
     build:
-      context: "/Users/vradaev/RiderProjects/CTHelpDesk"
+      context: "/Users/vradaev/RiderProjects/TGBotJira"
       dockerfile: "Dockerfile"
       target: "base"
     command: []
@@ -15,7 +15,7 @@ services:
     image: "jirabot:dev"
     ports: []
     volumes:
-    - "/Users/vradaev/.nuget/packages:/home/app/.nuget/packages"
-    - "/Users/vradaev/RiderProjects/CTHelpDesk:/app:rw"
-    - "/Users/vradaev/RiderProjects/CTHelpDesk:/src:rw"
+    - "/Users/vradaev/.nuget/packages:/root/.nuget/packages"
+    - "/Users/vradaev/RiderProjects/TGBotJira:/app:rw"
+    - "/Users/vradaev/RiderProjects/TGBotJira:/src:rw"
     working_dir: "/app"
