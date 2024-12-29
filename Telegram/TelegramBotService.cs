@@ -623,7 +623,8 @@ public class UniqueIdGenerator
             // Запуск браузера с указанием пути к Chromium
             var browserOptions = new LaunchOptions
             {
-                Headless = true
+                Headless = true,
+                ExecutablePath = "/app/.chrome/Chrome/Linux-130.0.6723.69/chrome-linux64/chrome"
             };
             
             Logger.Info("Launching browser...");
