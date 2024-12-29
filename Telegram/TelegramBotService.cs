@@ -614,12 +614,17 @@ public class UniqueIdGenerator
         try
         {
             Logger.Info("Downloading Puppeteer browser...");
-            await new BrowserFetcher().DownloadAsync();
+            var browserFetcher = new BrowserFetcher(new BrowserFetcherOptions
+            {
+                Path = "/app/.chrome" 
+            });
+            await browserFetcher.DownloadAsync();
             
             // Запуск браузера с указанием пути к Chromium
             var browserOptions = new LaunchOptions
             {
-                Headless = true
+                Headless = true,
+                ExecutablePath = "/app/.chrome/chrome-linux64/chrome"
             };
             
             Logger.Info("Launching browser...");
