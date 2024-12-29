@@ -32,7 +32,9 @@ RUN apt-get update && apt-get install -y \
     libappindicator3-1 \
     xdg-utils \
     libgbm-dev \
-    --no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
+    --no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/* 
+
+RUN mkdir -p /app/.chrome && chmod -R 777 /app/.chrome
 
 # Определение пользователя, если требуется
 USER $APP_UID
