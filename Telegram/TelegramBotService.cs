@@ -624,7 +624,7 @@ public class UniqueIdGenerator
             var browserOptions = new LaunchOptions
             {
                 Headless = true,
-                ExecutablePath = "/app/.chrome/chrome-linux64/chrome"
+                ExecutablePath = "/app/.chrome/chrome"
             };
             
             Logger.Info("Launching browser...");
