@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y \
     libgbm-dev \
     --no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/* 
 
-RUN mkdir -p /app/.chrome && chmod -R 777 /app/.chrome
+RUN mkdir -p /app && chmod -R 777 /app
 
 # Определение пользователя, если требуется
 USER $APP_UID
