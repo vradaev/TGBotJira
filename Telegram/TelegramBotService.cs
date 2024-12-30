@@ -398,7 +398,7 @@ private async Task<bool> ProcessCommandAsync(Message message)
     if (message.Text.StartsWith("/dashboard"))
     {
         var dashboardUrl = _config.SuperSet.DashboardUrl; 
-        var caption = "Скриншот дашборда Superset";
+        var caption = "#supportmetric";
         var loginUrl = _config.SuperSet.loginUrl;
         var username = _config.SuperSet.Login;
         var password = _config.SuperSet.Password;
@@ -593,7 +593,7 @@ public class UniqueIdGenerator
             using (var stream = new FileStream(screenshotPath, FileMode.Open))
             {
                 var fileToSend = new InputFileStream(stream, "dashboard_screenshot.png");
-                await _botClient.SendPhotoAsync(chatId, fileToSend);
+                await _botClient.SendPhotoAsync(chatId, fileToSend, caption: caption);
             }
 
             // Удаляем временный файл
@@ -616,7 +616,7 @@ public class UniqueIdGenerator
             Logger.Info("Downloading Puppeteer browser...");
             var browserFetcher = new BrowserFetcher(new BrowserFetcherOptions
             {
-                Path = "/app/.chrome" 
+            //    Path = "/app/.chrome" 
             });
             await browserFetcher.DownloadAsync();
             
@@ -624,7 +624,7 @@ public class UniqueIdGenerator
             var browserOptions = new LaunchOptions
             {
                 Headless = true,
-                ExecutablePath = "/app/.chrome/Chrome/Linux-130.0.6723.69/chrome-linux64/chrome",
+              //  ExecutablePath = "/app/.chrome/Chrome/Linux-130.0.6723.69/chrome-linux64/chrome",
                 Args = new[] { "--no-sandbox" } 
             };
             
