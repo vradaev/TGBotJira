@@ -24,7 +24,7 @@ public class DashboardJob : IJob
             Logger.Info("Dashboard job started.");
 
             // Получаем данные задачи из JobDataMap
-            long chatId = -4523860796;
+            long chatId = -311068690;
             var dashboardUrl = _config.SuperSet.DashboardUrl;
             var caption = $"[Dashboard]({dashboardUrl})\n#supportmetric";
             var loginUrl = _config.SuperSet.loginUrl;
