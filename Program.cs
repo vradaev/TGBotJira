@@ -1,9 +1,12 @@
 ﻿using System.Threading.Channels;
 using JIRAbot;
 using JIRAbot.Alarm;
+using JIRAbot.Job;
 using JIRAbot.SuperSet;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
+using Quartz.Spi;
 using Telegram.Bot;
 
 class Program
@@ -21,6 +24,10 @@ class Program
             
             var config = new Config("config.json");
             var channelId = config.Telegram.ChannelAlarm;
+            
+            var serviceProvider = ConfigureServices(config);
+            await QuartzScheduler.StartScheduler(serviceProvider);
+
             
             var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
                 .UseNpgsql(config.ConnectionStrings.DefaultConnection)
@@ -45,9 +52,10 @@ class Program
             var telegramBotService = new TelegramBotService(config.Telegram.BotToken, jiraClient, config.Telegram.BotUsername, mediaHandlerService, context, chatConfigService, config, channelId, notificationService, sendDashboardService);
             var jiraTicketService = new JiraTicketService(context, jiraClient);
             
-            
             var syncTask = StartJiraSyncPeriodically(jiraTicketService, cancellationToken);
             var botTask = telegramBotService.StartAsync(cancellationToken);
+            
+            
 
             Logger.Info("Bot is running... Press any key to exit.");
 
@@ -64,6 +72,23 @@ class Program
         {
             LogManager.Shutdown(); 
         }
+    }
+    
+    private static IServiceProvider ConfigureServices(Config config)
+    {
+        var serviceCollection = new ServiceCollection();
+
+        // Добавляем конфигурацию и зависимости в DI
+        serviceCollection.AddSingleton(new TelegramBotClient(config.Telegram.BotToken));
+        serviceCollection.AddSingleton(config);
+        serviceCollection.AddTransient<SendDashboardService>();
+        serviceCollection.AddTransient<DashboardJob>(); // Задача для Quartz
+        serviceCollection.AddSingleton<IJobFactory, JobFactory>();
+
+        // Настраиваем другие сервисы
+        // Например, TelegramBotClient, JiraClient и т.д.
+
+        return serviceCollection.BuildServiceProvider();
     }
     
     private static async Task StartJiraSyncPeriodically(JiraTicketService jiraTicketService, CancellationToken cancellationToken)
