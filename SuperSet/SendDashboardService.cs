@@ -2,6 +2,7 @@ using NLog;
 using PuppeteerSharp;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace JIRAbot.SuperSet;
 
@@ -35,7 +36,7 @@ public class SendDashboardService
             using (var stream = new FileStream(screenshotPath, FileMode.Open))
             {
                 var fileToSend = new InputFileStream(stream, "dashboard_screenshot.png");
-                await _botClient.SendPhotoAsync(chatId, fileToSend, caption: caption);
+                await _botClient.SendPhotoAsync(chatId, fileToSend, caption: caption, parseMode: ParseMode.Markdown);
             }
 
             // Удаляем временный файл

@@ -401,7 +401,7 @@ private async Task<bool> ProcessCommandAsync(Message message)
     if (message.Text.StartsWith("/dashboard"))
     {
         var dashboardUrl = _config.SuperSet.DashboardUrl; 
-        var caption = "#supportmetric";
+        var caption = $"[Dashboard]({dashboardUrl})\n#supportmetric";
         var loginUrl = _config.SuperSet.loginUrl;
         var username = _config.SuperSet.Login;
         var password = _config.SuperSet.Password;
