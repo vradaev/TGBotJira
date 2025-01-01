@@ -37,7 +37,7 @@ public class QuartzScheduler
             var trigger = TriggerBuilder.Create()
                 .WithIdentity("DailyTrigger", "FrequentTasks") 
                 .StartNow()  // Начать сразу
-                .WithSchedule(CronScheduleBuilder.CronSchedule("0 1 * * * ?"))  
+                .WithSchedule(CronScheduleBuilder.CronSchedule("0 1 * * *"))  
                 .Build();
 
             Logger.Info("Trigger defined for daily execution at 1:00 AM.");
