@@ -21,5 +21,11 @@
       "ApiKey": "your-smsc-api-key",
       "Sender": "your-smsc-sender"
     }
+  },
+  "SuperSet":{
+    "loginUrl":"https://your-superset-site/login",
+    "Login":"login",
+    "Password":"password",
+    "DashboardUrl":"https://your-superset-site/dashboard/22"
   }
 }

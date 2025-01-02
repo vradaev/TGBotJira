@@ -1,6 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [3.1.0] - 2025-01-02
+
+### Features
+- Add the ability to send the SuperSet dashboard to a Telegram channel.
+### Technical
+- Refactoring Program class
+- Add Quarz library
+- Add Puppeteer library
+
 ## [3.0.0] - 2024-12-28
 
 ### Features

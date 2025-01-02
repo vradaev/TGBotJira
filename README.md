@@ -11,7 +11,17 @@ My Project is a tool that helps you helpesk team improve communication with the 
 
 ## Description
 
-My Project is help to recived the client message in the telegram and open tickets in the JIRA service desk.
+My Project is help to recived the client message in the telegram channel and open tickets in the JIRA service desk.
+The project is integrated with receiving the support team metrics dashboard from Superset and sends the metrics to a Telegram channel.
+
+### Available commands 
+**/addcleint nameofclient** - The command add a client and chat ID for interaction with the bot. 
+
+**/dashboard** - The command sends a Superset dashboard with support team metrics. 
+
+**/sos** - The command sends a notification to duty support employee.
+
+**/cachereload** - The system command which reload order cache.
 
 ## Installation
 
@@ -21,7 +31,7 @@ My Project is help to recived the client message in the telegram and open ticket
     ```
 2. Copy your config file from local to remote Ubuntu with Docker:
     ```bash
-     scp -P 5000 /Users/vradaev/RiderProjects/CTHelpDesk/config.json vradaev@111.1.11.11:~/TGBotJira/
+     scp -P 5000 /Users/login/RiderProjects/CTHelpDesk/config.json login@111.1.11.11:~/TGBotJira/
     ```
 3. Open directory
     ```bash
@@ -46,9 +56,9 @@ My Project is help to recived the client message in the telegram and open ticket
 
 ## Contacts
 
-If you have any questions, you can contact me on the TG: @vadimradaev
+If you have any questions, please can contact me on the TG: @vadimradaev
 
 
 ## ChangeLog
 
-Все значимые изменения и обновления можно найти в [CHANGELOG.md](CHANGELOG.md).
+All significant changes and updates can be found in [CHANGELOG.md](CHANGELOG.md)
