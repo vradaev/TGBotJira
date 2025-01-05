@@ -36,7 +36,7 @@ public class SendDashboardService
             using (var stream = new FileStream(screenshotPath, FileMode.Open))
             {
                 var fileToSend = new InputFileStream(stream, "dashboard_screenshot.png");
-                await _botClient.SendPhotoAsync(chatId, fileToSend, caption: caption, parseMode: ParseMode.Markdown);
+                await _botClient.SendPhotoAsync(chatId, fileToSend, caption: caption, disableNotification:true, parseMode: ParseMode.Markdown);
             }
 
             // Удаляем временный файл
