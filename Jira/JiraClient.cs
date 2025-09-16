@@ -155,22 +155,34 @@ public class JiraClient
     public async Task<List<JiraTicket>> GetIssuesUpdatedAfterAsync(DateTime lastSyncDate)
     {
         var allIssues = new List<JiraTicket>();
-        int startAt = 0; // Начало страницы
+        int startAt = 0; // Начало страницы (fallback)
         int maxResults = 100; // Максимальное количество задач за запрос
+        int page = 0;
+        const int maxPages = 1000; // страховка от бесконечного цикла
+        string nextPageToken = null; // курсор пагинации
 
         while (true)
         {
-            Logger.Info("Fetching Jira issues updated after: {0}, startAt: {1}", lastSyncDate, startAt);
+            Logger.Info("Fetching Jira issues updated after: {0}, startAt: {1}, nextPageToken: {2}", lastSyncDate, startAt, nextPageToken ?? "<null>");
 
             var client = new RestClient(_jiraUrl);
-            var request = new RestRequest("rest/api/3/search", Method.Get);
+            var request = new RestRequest("rest/api/3/search/jql", Method.Get);
 
             // Формируем JQL запрос
             var adjustedSyncDate = lastSyncDate.AddHours(3);
             var jql = $"project={_projectKey} AND updated >= '{adjustedSyncDate:yyyy-MM-dd HH:mm}'";
+            Logger.Info("JQL Query: {0}", jql);
             request.AddParameter("jql", jql, ParameterType.QueryString);
             request.AddParameter("maxResults", maxResults, ParameterType.QueryString); // Лимит задач
-            request.AddParameter("startAt", startAt, ParameterType.QueryString); // Смещение
+            if (string.IsNullOrEmpty(nextPageToken))
+            {
+                request.AddParameter("startAt", startAt, ParameterType.QueryString); // Смещение (только до появления курсора)
+            }
+            else
+            {
+                request.AddParameter("nextPageToken", nextPageToken, ParameterType.QueryString); // Курсор следующей страницы
+            }
+            request.AddParameter("fields", $"key,summary,description,status,assignee,created,resolutiondate,updated,{_customField}", ParameterType.QueryString);
             request.AddHeader("Authorization",
                 $"Basic {Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{_email}:{_apiToken}"))}");
 
@@ -180,12 +192,24 @@ public class JiraClient
             {
                 dynamic responseBody = JsonConvert.DeserializeObject(response.Content);
                 var issues = new List<JiraTicket>();
+                
+                var responseObject = Newtonsoft.Json.Linq.JObject.Parse(response.Content);
+                bool isLastPage = responseObject.Value<bool?>("isLast") ?? false;
+                int returnedCount = (responseObject["issues"] as Newtonsoft.Json.Linq.JArray)?.Count ?? 0;
+                string nextTokenFromResponse = responseObject.Value<string>("nextPageToken");
+                Logger.Info("Response contains {0} issues (isLast={1}, nextPageToken={2})", returnedCount, isLastPage, nextTokenFromResponse ?? "<null>");
 
                 foreach (var issue in responseBody.issues)
                 {
-                    if (issue == null || issue.fields == null)
+                    if (issue == null)
                     {
-                        Logger.Error("Issue or fields are null in response");
+                        Logger.Error("Issue is null in response");
+                        continue;
+                    }
+                    
+                    if (issue.fields == null)
+                    {
+                        Logger.Error("Issue fields are null for issue: {0}", issue.key?.ToString() ?? "unknown");
                         continue;
                     }
 
@@ -195,27 +219,69 @@ public class JiraClient
                     {
                         try
                         {
-                            descriptionText =
-                                issue.fields.description.SelectToken("content[0].content[0].text")?.ToString() ??
-                                "no description";
+                            // Проверяем, является ли описание JSON объектом или простой строкой
+                            if (issue.fields.description is Newtonsoft.Json.Linq.JObject)
+                            {
+                                descriptionText =
+                                    issue.fields.description.SelectToken("content[0].content[0].text")?.ToString() ??
+                                    "no description";
+                            }
+                            else
+                            {
+                                descriptionText = issue.fields.description.ToString();
+                            }
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error("description is null in response");
-                            continue;
+                            Logger.Error("Error parsing description: {0}", ex.Message);
+                            descriptionText = "no description";
                         }
+                    }
+
+                    // Извлечение ClientName из кастомного поля с учетом разных форматов (object/array/string)
+                    string clientName = null;
+                    try
+                    {
+                        var cfToken = issue.fields[_customField] as Newtonsoft.Json.Linq.JToken;
+                        if (cfToken == null)
+                        {
+                            clientName = null;
+                        }
+                        else if (cfToken.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+                        {
+                            var obj = (Newtonsoft.Json.Linq.JObject)cfToken;
+                            clientName = (string)(obj["value"] ?? obj["name"] ?? obj["displayName"] ?? obj["id"]) ?? obj.ToString();
+                        }
+                        else if (cfToken.Type == Newtonsoft.Json.Linq.JTokenType.Array)
+                        {
+                            var first = cfToken.First;
+                            if (first != null)
+                            {
+                                clientName = (string)(first["value"] ?? first["name"] ?? first["displayName"] ?? first["id"]) ?? first.ToString();
+                            }
+                        }
+                        else
+                        {
+                            clientName = cfToken.ToString();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error("Error parsing custom field {0}: {1}", _customField, ex.Message);
                     }
 
                     var ticket = new JiraTicket
                     {
                         JiraKey = issue.key?.ToString(),
-                        ClientName = issue.fields[_customField]?.value?.ToString(),
-                        Assignee = issue.fields.assignee != null
-                            ? issue.fields.assignee["displayName"]?.ToString()
+                        ClientName = clientName,
+                        Assignee = issue.fields.assignee != null && issue.fields.assignee is Newtonsoft.Json.Linq.JObject
+                            ? issue.fields.assignee["displayName"]?.ToString() ?? "not assigned"
                             : "not assigned",
                         Summary = issue.fields.summary?.ToString(),
                         Description = descriptionText,
-                        Status = issue.fields.status?.name?.ToString(),
+                        Status = issue.fields.status != null && issue.fields.status is Newtonsoft.Json.Linq.JObject
+                            ? issue.fields.status["name"]?.ToString()
+                            : issue.fields.status?.ToString(),
                         CreatedAt = issue.fields.created != null
                             ? DateTime.Parse(issue.fields.created.ToString()).ToUniversalTime()
                             : DateTime.MinValue,
@@ -232,12 +298,28 @@ public class JiraClient
                 Logger.Info("Fetched {0} issues in this page", issues.Count);
 
                 // Проверяем, есть ли еще задачи для обработки
-                if (issues.Count < maxResults)
+                if (isLastPage || returnedCount == 0)
                 {
-                    break; // Если задач меньше `maxResults`, значит, это последняя страница
+                    break; // Последняя страница или пустой ответ
                 }
 
-                startAt += maxResults; // Увеличиваем смещение для следующей страницы
+                // Курсорная пагинация имеет приоритет
+                if (!string.IsNullOrEmpty(nextTokenFromResponse))
+                {
+                    nextPageToken = nextTokenFromResponse;
+                }
+                else
+                {
+                    // Fallback к offset-пагинации
+                    startAt += returnedCount;
+                }
+
+                page++;
+                if (page >= maxPages)
+                {
+                    Logger.Error("Pagination aborted: exceeded max pages {0}. startAt={1}, nextPageToken={2}", maxPages, startAt, nextPageToken ?? "<null>");
+                    break;
+                }
             }
             else
             {
