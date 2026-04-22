@@ -168,7 +168,7 @@ public class TelegramBotService
     private async Task HandleMediaMessage(Message message)
     {
         var (chatConfig, channel) = await _chatConfigService.GetChatConfigAndChannelAsync(message.Chat.Id);
-        await _mediaHandlerService.HandleMediaMessageAsync(message, _botUsername, _messageToIssueMap, chatConfig);
+        await _mediaHandlerService.HandleMediaMessageAsync(message, _botUsername, _messageToIssueMap, chatConfig, channel);
     }
 
     private async Task HandleReplyMessage(Message message)

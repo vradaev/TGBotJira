@@ -17,7 +17,7 @@ public class MediaHandlerService
         _jiraClient = jiraClient;
     }
 
-    public async Task HandleMediaMessageAsync(Message message, string botUsername, Dictionary<(long chatId, long messageId), string> messageToIssueMap, ChatConfig chatConfig)
+    public async Task HandleMediaMessageAsync(Message message, string botUsername, Dictionary<(long chatId, long messageId), string> messageToIssueMap, ChatConfig chatConfig, string channel)
     {
         Logger.Info("Received media message from chat {0}", message.Chat.Id);
         
@@ -41,32 +41,15 @@ public class MediaHandlerService
             return;
         }
 
-        var filePath = await _botClient.GetFileAsync(fileId);
-        if (filePath == null)
-        {
-            Logger.Error("Failed to retrieve file path for fileId {0} from chat {1}.", fileId, message.Chat.Id);
-            await _botClient.SendTextMessageAsync(message.Chat.Id, "\ud83d\udeab Failed to retrieve the file.");
-            return;
-        }
-
-        var fileName = message.Document?.FileName ?? "image.jpg";
-
         try
         {
-            using (var saveImageStream = new FileStream(fileName, FileMode.Create))
-            {
-                await _botClient.DownloadFileAsync(filePath.FilePath, saveImageStream);
-            }
-
-            Logger.Info("File {0} saved successfully from chat {1}.", fileName, message.Chat.Id);
-
             if (message.ReplyToMessage != null)
             {
                 if (messageToIssueMap.TryGetValue((message.Chat.Id, message.ReplyToMessage.MessageId), out string existingIssueKey))
                 {
-                    await AttachFilesToIssueAsync(message, existingIssueKey);
                     var commentText = message.Caption?.Replace($"@{botUsername}", "", StringComparison.OrdinalIgnoreCase).Trim() ?? string.Empty;
                     await _jiraClient.AddCommentToIssueAsync(existingIssueKey, commentText);
+                    await AttachFilesToIssueAsync(message, existingIssueKey);
                     await _botClient.SendTextMessageAsync(message.Chat.Id, $"\ud83d\udcdd Comment added with attachment to: <a href=\"https://ct-ms.atlassian.net/browse/{existingIssueKey}\">{existingIssueKey}</a>", parseMode: ParseMode.Html);
                     Logger.Info("Added comment with attachment to Jira issue {0} from chat {1}", existingIssueKey, message.Chat.Id);
                 }
@@ -85,11 +68,26 @@ public class MediaHandlerService
                 else
                 {
                     string summary = cleanedText.Length > 250 ? cleanedText.Substring(0, 250) : cleanedText;
-                    string newIssueKey = await _jiraClient.CreateIssueAsync(summary, cleanedText, chatConfig.ClientName);
+                    var jiraChannel = !string.IsNullOrWhiteSpace(channel) ? channel : chatConfig.ClientName;
+                    if (string.IsNullOrWhiteSpace(jiraChannel))
+                    {
+                        Logger.Error("Chat {0} has no channel/client mapping for Jira issue creation.", message.Chat.Id);
+                        await _botClient.SendTextMessageAsync(message.Chat.Id, "\ud83d\udeab Chat is not mapped to a Jira client/channel.");
+                        return;
+                    }
+
+                    string newIssueKey = await _jiraClient.CreateIssueAsync(summary, cleanedText, jiraChannel);
 
                     if (!string.IsNullOrEmpty(newIssueKey))
                     {
-                        await AttachFilesToIssueAsync(message, newIssueKey);
+                        try
+                        {
+                            await AttachFilesToIssueAsync(message, newIssueKey);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, "Issue {0} created but attachment upload failed.", newIssueKey);
+                        }
                         await _botClient.SendTextMessageAsync(message.Chat.Id, $"\ud83c\udd95 Issue created: <a href=\"https://ct-ms.atlassian.net/browse/{newIssueKey}\">{newIssueKey}</a>", parseMode: ParseMode.Html);
                         messageToIssueMap[(message.Chat.Id, message.MessageId)] = newIssueKey;
                         Logger.Info("Issue created in Jira with attachment: {0}", newIssueKey);
