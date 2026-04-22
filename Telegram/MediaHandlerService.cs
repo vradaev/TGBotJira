@@ -17,7 +17,7 @@ public class MediaHandlerService
         _jiraClient = jiraClient;
     }
 
-    public async Task HandleMediaMessageAsync(Message message, string botUsername, Dictionary<long, string> messageToIssueMap, ChatConfig chatConfig)
+    public async Task HandleMediaMessageAsync(Message message, string botUsername, Dictionary<(long chatId, long messageId), string> messageToIssueMap, ChatConfig chatConfig)
     {
         Logger.Info("Received media message from chat {0}", message.Chat.Id);
         
@@ -62,7 +62,7 @@ public class MediaHandlerService
 
             if (message.ReplyToMessage != null)
             {
-                if (messageToIssueMap.TryGetValue(message.ReplyToMessage.MessageId, out string existingIssueKey))
+                if (messageToIssueMap.TryGetValue((message.Chat.Id, message.ReplyToMessage.MessageId), out string existingIssueKey))
                 {
                     await AttachFilesToIssueAsync(message, existingIssueKey);
                     var commentText = message.Caption?.Replace($"@{botUsername}", "", StringComparison.OrdinalIgnoreCase).Trim() ?? string.Empty;
@@ -91,7 +91,7 @@ public class MediaHandlerService
                     {
                         await AttachFilesToIssueAsync(message, newIssueKey);
                         await _botClient.SendTextMessageAsync(message.Chat.Id, $"\ud83c\udd95 Issue created: <a href=\"https://ct-ms.atlassian.net/browse/{newIssueKey}\">{newIssueKey}</a>", parseMode: ParseMode.Html);
-                        messageToIssueMap[message.MessageId] = newIssueKey;
+                        messageToIssueMap[(message.Chat.Id, message.MessageId)] = newIssueKey;
                         Logger.Info("Issue created in Jira with attachment: {0}", newIssueKey);
                     }
                     else

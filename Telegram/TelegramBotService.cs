@@ -26,7 +26,7 @@ public class TelegramBotService
     private readonly EscalationService _escalationService;
     private readonly SendDashboardService _sendDashboardService;
     
-    private readonly Dictionary<long, string> _messageToIssueMap = new Dictionary<long, string>();
+    private readonly Dictionary<(long chatId, long messageId), string> _messageToIssueMap = new Dictionary<(long, long), string>();
     
     private readonly string _botUsername;
 
@@ -134,8 +134,8 @@ public class TelegramBotService
                             var sentMessage = await _botClient.SendTextMessageAsync(message.Chat.Id,
                                 $"\ud83c\udd95 Issue created: <a href=\"https://ct-ms.atlassian.net/browse/{issueKey}\">{issueKey}</a>",
                                 parseMode: ParseMode.Html);
-                            _messageToIssueMap[message.MessageId] = issueKey;
-                            _messageToIssueMap[sentMessage.MessageId] = issueKey;
+                            _messageToIssueMap[(message.Chat.Id, message.MessageId)] = issueKey;
+                            _messageToIssueMap[(sentMessage.Chat.Id, sentMessage.MessageId)] = issueKey;
                             Logger.Info("Issue created in Jira: {0}", issueKey);
                         }
                         else
@@ -176,7 +176,7 @@ public class TelegramBotService
         string issueKey = null;
         Message currentMessage = message;
         
-        if (_messageToIssueMap.TryGetValue(message.ReplyToMessage.MessageId, out issueKey))
+        if (_messageToIssueMap.TryGetValue((message.Chat.Id, message.ReplyToMessage.MessageId), out issueKey))
         {
             var commentText = message.Text ?? "No text provided";
 
@@ -190,7 +190,7 @@ public class TelegramBotService
                 }
 
                 // Сохраняем идентификатор нового комментария и связываем его с задачей
-                _messageToIssueMap[message.MessageId] = issueKey;
+                _messageToIssueMap[(message.Chat.Id, message.MessageId)] = issueKey;
 
                // await _botClient.SendTextMessageAsync(message.Chat.Id, $"\ud83d\udcdd Comment added: <a href=\"https://ct-ms.atlassian.net/browse/{issueKey}\">{issueKey}</a>", parseMode: ParseMode.Html);
                 Logger.Info("Added comment to Jira issue {0} from chat {1}", issueKey, message.Chat.Id);
@@ -266,7 +266,7 @@ public class TelegramBotService
             }
 
             await _jiraClient.AttachFileToIssueAsync(issueKey, fileName);
-            _messageToIssueMap[message.MessageId] = issueKey;
+            _messageToIssueMap[(message.Chat.Id, message.MessageId)] = issueKey;
 
             Logger.Info("Attached file to Jira issue {0}: {1}", issueKey, fileName);
         }
