@@ -67,7 +67,7 @@ public class MediaHandlerService
                 }
                 else
                 {
-                    string summary = cleanedText.Length > 250 ? cleanedText.Substring(0, 250) : cleanedText;
+                    string summary = SanitizeSummary(cleanedText);
                     var jiraChannel = !string.IsNullOrWhiteSpace(channel) ? channel : chatConfig.ClientName;
                     if (string.IsNullOrWhiteSpace(jiraChannel))
                     {
@@ -122,5 +122,17 @@ public class MediaHandlerService
             await _jiraClient.AttachFileToIssueAsync(issueKey, fileName);
             Logger.Info("Attached file to Jira issue {0}: {1}", issueKey, fileName);
         }
+    }
+
+    private static string SanitizeSummary(string summary)
+    {
+        var sanitized = summary
+            .Replace("\r\n", " ")
+            .Replace("\n", " ")
+            .Replace("\r", " ")
+            .Replace("\t", " ")
+            .Trim();
+
+        return sanitized.Length > 250 ? sanitized[..250] : sanitized;
     }
 }
